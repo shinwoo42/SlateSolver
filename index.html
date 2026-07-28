@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Query and inspect precomputed slate board solutions."
+    />
+    <title>Slate Planner</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Slate Planner</h1>
+    </header>
+
+    <main class="workspace">
+      <section class="panel limits-panel" aria-labelledby="limits-title">
+        <div class="panel-header">
+          <h2 id="limits-title">Slate limits</h2>
+          <button id="reset-limits" class="button" type="button">Reset</button>
+        </div>
+        <p class="hint">Min required · Max allowed · Max 0 excludes</p>
+        <div id="inventory-list" class="inventory-list"></div>
+      </section>
+
+      <section class="panel solution-panel" aria-labelledby="solution-title">
+        <div class="panel-header solution-header">
+          <h2 id="solution-title">Solution</h2>
+          <div class="solution-header-data">
+            <div id="solution-status" class="solution-status" aria-live="polite">
+              <span class="solution-status-label">Loading</span>
+            </div>
+            <div class="solution-score">
+              <span>Score</span>
+              <strong id="metric-score">—</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <div class="board-panel">
+            <div
+              id="solution-board"
+              class="solution-board"
+              role="grid"
+              aria-label="Solution board"
+            ></div>
+            <p id="board-hint" class="board-hint"></p>
+          </div>
+
+          <aside class="breakdown" aria-labelledby="breakdown-title">
+            <div class="breakdown-header">
+              <h3 id="breakdown-title">Score breakdown</h3>
+            </div>
+            <div id="solution-legend" class="solution-legend"></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <template id="inventory-row-template">
+      <article class="inventory-row">
+        <div class="piece-identity">
+          <span class="piece-symbol" aria-hidden="true"></span>
+          <div>
+            <h3 class="piece-name"></h3>
+          </div>
+        </div>
+        <div class="piece-controls">
+          <div class="bound-control">
+            <span class="bound-label">Min</span>
+            <div class="stepper">
+              <button
+                class="stepper-button minimum-decrease"
+                type="button"
+                aria-label="Decrease minimum"
+              >−</button>
+              <input
+                class="bound-input minimum-input"
+                type="number"
+                min="0"
+                inputmode="numeric"
+              />
+              <button
+                class="stepper-button minimum-increase"
+                type="button"
+                aria-label="Increase minimum"
+              >+</button>
+            </div>
+          </div>
+          <div class="bound-control">
+            <span class="bound-label">Max</span>
+            <div class="stepper">
+              <button
+                class="stepper-button maximum-decrease"
+                type="button"
+                aria-label="Decrease maximum"
+              >−</button>
+              <input
+                class="bound-input maximum-input"
+                type="number"
+                min="0"
+                inputmode="numeric"
+              />
+              <button
+                class="stepper-button maximum-increase"
+                type="button"
+                aria-label="Increase maximum"
+              >+</button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>
