@@ -52,7 +52,10 @@ const elements = {
   resetLimits: document.querySelector("#reset-limits"),
   solutionStatus: document.querySelector("#solution-status"),
   score: document.querySelector("#metric-score"),
+  resultGrid: document.querySelector(".result-grid"),
+  boardPanel: document.querySelector(".board-panel"),
   board: document.querySelector("#solution-board"),
+  boardEmptyState: document.querySelector("#board-empty-state"),
   boardHint: document.querySelector("#board-hint"),
   legend: document.querySelector("#solution-legend"),
 };
@@ -257,7 +260,10 @@ function updateSolution() {
   try {
     const result = queryCatalog(state.catalog, state.pieceCounts);
     if (result.scenario === null) {
-      showError("No selectable solution satisfies these count limits.");
+      showError(
+        "No selectable solution satisfies these count limits.",
+        "No solution for these limits.",
+      );
       return;
     }
     renderScenario(result.scenario);
@@ -268,6 +274,10 @@ function updateSolution() {
 
 function renderScenario(scenario) {
   elements.solutionStatus.classList.remove("error");
+  elements.resultGrid.classList.remove("no-solution");
+  elements.boardPanel.classList.remove("no-solution");
+  elements.boardEmptyState.hidden = true;
+  elements.board.setAttribute("aria-label", "Solution board");
   const status = state.catalog.statuses[scenario.status];
   elements.solutionStatus.querySelector(".solution-status-label").textContent =
     scenario.status === "OPTIMAL" ? "Optimal" : status.message;
@@ -383,11 +393,26 @@ function renderLegend(scenario) {
   elements.legend.replaceChildren(...rows);
 }
 
-function showError(message) {
+function showError(message, boardMessage = "Unable to display a solution.") {
   elements.solutionStatus.classList.add("error");
   elements.solutionStatus.querySelector(".solution-status-label").textContent =
     message;
   elements.score.textContent = "—";
+  elements.boardHint.textContent = "";
+  elements.legend.replaceChildren();
+  elements.resultGrid.classList.add("no-solution");
+  elements.boardPanel.classList.add("no-solution");
+  elements.boardEmptyState.textContent = boardMessage;
+  elements.boardEmptyState.hidden = false;
+  elements.board.setAttribute("aria-label", boardMessage);
+  if (state.catalog) {
+    renderBoard({
+      inventory: {},
+      placements: [],
+    });
+  } else {
+    elements.board.replaceChildren();
+  }
 }
 
 function pieceColor(name, index = 0) {

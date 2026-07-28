@@ -14,6 +14,7 @@
   --muted: #a2a8b0;
   --subtle: #747b84;
   --accent: #c3c8ce;
+  --success: #65b96e;
   --danger: #ff7d86;
 }
 
@@ -303,7 +304,7 @@ p {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--success);
   content: "";
 }
 
@@ -339,7 +340,20 @@ p {
   background: var(--input);
 }
 
+.result-grid.no-solution {
+  grid-template-columns: 1fr;
+}
+
+.result-grid.no-solution .board-panel {
+  border-right: 0;
+}
+
+.result-grid.no-solution .breakdown {
+  display: none;
+}
+
 .board-panel {
+  position: relative;
   display: grid;
   align-content: center;
   justify-items: center;
@@ -347,6 +361,28 @@ p {
   padding: 24px;
   border-right: 1px solid var(--line);
   background: var(--input);
+}
+
+.board-panel.no-solution .solution-board {
+  opacity: 0.22;
+}
+
+.board-empty-state {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  inset: 0;
+  place-items: center;
+  padding: 24px;
+  color: var(--text);
+  background: rgb(28 31 36 / 82%);
+  font-size: 0.86rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.board-empty-state[hidden] {
+  display: none;
 }
 
 .solution-board {
@@ -480,6 +516,20 @@ p {
   .limits-panel,
   .solution-panel {
     padding: 12px;
+  }
+
+  .solution-header:has(.solution-status.error) {
+    flex-wrap: wrap;
+  }
+
+  .solution-header:has(.solution-status.error) .solution-header-data {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .solution-header:has(.solution-status.error) .solution-status {
+    max-width: calc(100% - 78px);
+    line-height: 1.35;
   }
 
   .inventory-list,
