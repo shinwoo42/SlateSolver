@@ -1,27 +1,18 @@
 import { queryCatalog, validateCatalog } from "./catalog.mjs";
+import { buildPiecePaths } from "./board.mjs";
+
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 const PIECE_COLORS = {
-  Starlight: "#7ca9ff",
-  Corner: "#63d59d",
-  Prairie: "#f2c766",
-  Moth: "#c997ff",
-  SpaceRift: "#55d9df",
-  Divinity: "#ff7f91",
-  Pedigree: "#48b4bb",
-  Banishment: "#ee73b1",
-  Judgment: "#dfe3ef",
-};
-
-const PIECE_SYMBOLS = {
-  Starlight: "S",
-  Corner: "C",
-  Prairie: "P",
-  Moth: "M",
-  SpaceRift: "R",
-  Divinity: "D",
-  Pedigree: "G",
-  Banishment: "B",
-  Judgment: "J",
+  Starlight: "#ffe599",
+  Moth: "#f9cb9c",
+  Corner: "#f5b16a",
+  Pedigree: "#ff9900",
+  Divinity: "#e06666",
+  Prairie: "#ffadad",
+  SpaceRift: "#f1c232",
+  Banishment: "#3d85c6",
+  Judgment: "#3d85c6",
 };
 
 const PIECE_CATEGORIES = [
@@ -130,9 +121,7 @@ function renderInventoryControls() {
 function createInventoryRow(pieceType, index) {
   const row = elements.inventoryTemplate.content.firstElementChild.cloneNode(true);
   const color = pieceColor(pieceType.name, index);
-  const symbol = pieceSymbol(pieceType.name);
   row.style.setProperty("--piece-color", color);
-  row.querySelector(".piece-symbol").textContent = symbol;
   row.querySelector(".piece-name").textContent = pieceType.name;
 
   const minimumInput = row.querySelector(".minimum-input");
@@ -291,6 +280,7 @@ function renderScenario(scenario) {
 function renderBoard(scenario) {
   const pattern = state.catalog.board_pattern;
   const width = pattern[0].length;
+  const height = pattern.length;
   const memberToCanonical = new Map();
   const typeByName = new Map();
   state.catalog.piece_types.forEach((pieceType, index) => {
@@ -300,56 +290,58 @@ function renderBoard(scenario) {
     }
   });
 
-  const counters = new Map();
-  const occupied = new Map();
-  for (const placement of scenario.placements) {
-    const canonical = memberToCanonical.get(placement.piece) ?? placement.piece;
-    const count = (counters.get(canonical) ?? 0) + 1;
-    counters.set(canonical, count);
-    const total = scenario.inventory[canonical] ?? 1;
-    const label = `${pieceSymbol(canonical)}${total > 1 ? count : ""}`;
-    const type = typeByName.get(canonical);
-    const cellValue = {
-      label,
-      canonical,
-      concrete: placement.piece,
-      color: pieceColor(canonical, type?.index ?? 0),
-    };
-    for (const [row, column] of placement.cells) {
-      occupied.set(`${row}:${column}`, cellValue);
-    }
-  }
-
   const fragment = document.createDocumentFragment();
+  const baseLayer = svgElement("g", "board-base");
+  baseLayer.setAttribute("aria-hidden", "true");
   pattern.forEach((patternRow, row) => {
     [...patternRow].forEach((marker, column) => {
-      const cell = document.createElement("div");
-      cell.className = "board-cell";
-      cell.setAttribute("role", "gridcell");
-      if (marker !== "#") {
-        cell.classList.add("blocked");
-        cell.setAttribute("aria-hidden", "true");
-      } else {
-        const value = occupied.get(`${row}:${column}`);
-        if (value) {
-          cell.classList.add("occupied");
-          cell.style.setProperty("--piece-color", value.color);
-          cell.textContent = value.label;
-          cell.title =
-            value.canonical === value.concrete
-              ? value.canonical
-              : `${value.canonical} · ${value.concrete}`;
-          cell.setAttribute("aria-label", cell.title);
-        } else {
-          cell.textContent = "·";
-          cell.setAttribute("aria-label", "Empty playable cell");
-        }
+      if (marker === "#") {
+        const cell = svgElement("rect", "board-base-cell");
+        cell.setAttribute("x", String(column));
+        cell.setAttribute("y", String(row));
+        cell.setAttribute("width", "1");
+        cell.setAttribute("height", "1");
+        baseLayer.append(cell);
       }
-      fragment.append(cell);
     });
   });
-  elements.board.style.setProperty("--board-width", String(width));
+  fragment.append(baseLayer);
+
+  const pieceLayer = svgElement("g", "board-pieces");
+  scenario.placements.forEach((placement) => {
+    const canonical = memberToCanonical.get(placement.piece) ?? placement.piece;
+    const type = typeByName.get(canonical);
+    const color = pieceColor(canonical, type?.index ?? 0);
+    const geometry = buildPiecePaths(placement.cells);
+    const group = svgElement("g", "board-piece");
+    group.style.setProperty("--piece-color", color);
+
+    const title = svgElement("title");
+    title.textContent =
+      canonical === placement.piece
+        ? canonical
+        : `${canonical} · ${placement.piece}`;
+    const fill = svgElement("path", "board-piece-fill");
+    fill.setAttribute("d", geometry.fillPath);
+    const outline = svgElement("path", "board-piece-outline");
+    outline.setAttribute("d", geometry.boundaryPath);
+    outline.setAttribute("aria-hidden", "true");
+    group.append(title, fill, outline);
+    pieceLayer.append(group);
+  });
+  fragment.append(pieceLayer);
+
+  elements.board.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  elements.board.setAttribute("preserveAspectRatio", "xMidYMid meet");
   elements.board.replaceChildren(fragment);
+}
+
+function svgElement(name, className = "") {
+  const element = document.createElementNS(SVG_NAMESPACE, name);
+  if (className) {
+    element.setAttribute("class", className);
+  }
+  return element;
 }
 
 function renderLegend(scenario) {
@@ -417,18 +409,14 @@ function showError(message, boardMessage = "Unable to display a solution.") {
 
 function pieceColor(name, index = 0) {
   const fallback = [
-    "#7ca9ff",
-    "#63d59d",
-    "#f2c766",
-    "#c997ff",
-    "#55d9df",
-    "#ff7f91",
+    "#ffe599",
+    "#f9cb9c",
+    "#f5b16a",
+    "#ff9900",
+    "#e06666",
+    "#3d85c6",
   ];
   return PIECE_COLORS[name] ?? fallback[index % fallback.length];
-}
-
-function pieceSymbol(name) {
-  return PIECE_SYMBOLS[name] ?? name.slice(0, 1).toUpperCase();
 }
 
 function clampCount(value, maximum) {

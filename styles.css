@@ -177,17 +177,13 @@ p {
   min-width: 0;
 }
 
-.piece-symbol {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
+.piece-swatch {
+  width: 14px;
+  height: 14px;
   flex: 0 0 auto;
+  border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 2px;
-  color: #081014;
   background: var(--piece-color);
-  font-size: 0.78rem;
-  font-weight: 900;
 }
 
 .piece-name {
@@ -386,33 +382,29 @@ p {
 }
 
 .solution-board {
-  --board-width: 6;
-  display: grid;
-  grid-template-columns: repeat(var(--board-width), minmax(40px, 58px));
-  gap: 5px;
-}
-
-.board-cell {
-  --piece-color: transparent;
-  display: grid;
-  place-items: center;
+  display: block;
+  width: min(100%, 372px);
+  height: auto;
   aspect-ratio: 1;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  color: var(--subtle);
-  background: var(--surface);
-  font-size: 0.82rem;
-  font-weight: 900;
+  overflow: visible;
 }
 
-.board-cell.blocked {
-  visibility: hidden;
+.board-base-cell {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 0.035;
 }
 
-.board-cell.occupied {
-  border-color: var(--piece-color);
-  color: #071014;
-  background: var(--piece-color);
+.board-piece-fill {
+  fill: var(--piece-color);
+}
+
+.board-piece-outline {
+  fill: none;
+  stroke: #080a0d;
+  stroke-linecap: square;
+  stroke-width: 0.05;
+  pointer-events: none;
 }
 
 .board-hint {
@@ -554,11 +546,6 @@ p {
     padding: 12px 4px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-  }
-
-  .solution-board {
-    grid-template-columns: repeat(var(--board-width), minmax(32px, 50px));
-    gap: 5px;
   }
 
   .breakdown {
