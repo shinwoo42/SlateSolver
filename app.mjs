@@ -54,6 +54,7 @@ const elements = {
 const state = {
   catalog: null,
   pieceCounts: {},
+  pieceParameters: {},
   controls: new Map(),
 };
 
@@ -71,6 +72,12 @@ async function loadCatalog() {
         min: 0,
         max: pieceType.maximum,
       };
+      state.pieceParameters[pieceType.name] = Object.fromEntries(
+        (pieceType.parameters ?? []).map((parameter) => [
+          parameter.name,
+          parameter.default,
+        ]),
+      );
     }
     renderInventoryControls();
     bindGlobalActions();
@@ -130,6 +137,7 @@ function createInventoryRow(pieceType, index) {
   const minimumIncrease = row.querySelector(".minimum-increase");
   const maximumDecrease = row.querySelector(".maximum-decrease");
   const maximumIncrease = row.querySelector(".maximum-increase");
+  const parameterInputs = createParameterControls(pieceType, row);
   minimumInput.id = `minimum-${slug(pieceType.name)}`;
   maximumInput.id = `maximum-${slug(pieceType.name)}`;
   minimumInput.max = String(pieceType.maximum);
@@ -192,6 +200,7 @@ function createInventoryRow(pieceType, index) {
     minimumIncrease,
     maximumDecrease,
     maximumIncrease,
+    parameterInputs,
     row,
     maximum: pieceType.maximum,
   });
@@ -203,9 +212,75 @@ function bindGlobalActions() {
   elements.resetLimits.addEventListener("click", () => {
     for (const pieceType of state.catalog.piece_types) {
       setRange(pieceType.name, 0, pieceType.maximum, false);
+      for (const parameter of pieceType.parameters ?? []) {
+        setPieceParameter(
+          pieceType.name,
+          parameter.name,
+          parameter.default,
+          false,
+        );
+      }
     }
     updateSolution();
   });
+}
+
+function createParameterControls(pieceType, row) {
+  const container = row.querySelector(".piece-parameters");
+  const inputs = new Map();
+  for (const parameter of pieceType.parameters ?? []) {
+    const control = document.createElement("label");
+    control.className = "parameter-control";
+    const label = document.createElement("span");
+    label.className = "parameter-label";
+    label.textContent = parameter.label;
+    const select = document.createElement("select");
+    select.className = "parameter-select";
+    select.id = `parameter-${slug(pieceType.name)}-${slug(parameter.name)}`;
+    select.setAttribute(
+      "aria-label",
+      `${pieceType.name} ${parameter.label}`,
+    );
+    for (const option of parameter.options) {
+      const element = document.createElement("option");
+      element.value = option.value;
+      element.textContent = option.label;
+      select.append(element);
+    }
+    select.value = parameter.default;
+    select.addEventListener("change", () => {
+      setPieceParameter(
+        pieceType.name,
+        parameter.name,
+        select.value,
+      );
+    });
+    control.append(label, select);
+    container.append(control);
+    inputs.set(parameter.name, select);
+  }
+  container.hidden = inputs.size === 0;
+  return inputs;
+}
+
+function setPieceParameter(
+  pieceName,
+  parameterName,
+  value,
+  shouldUpdate = true,
+) {
+  state.pieceParameters[pieceName][parameterName] = value;
+  state.controls
+    .get(pieceName)
+    ?.parameterInputs.get(parameterName)
+    ?.setAttribute("value", value);
+  const select = state.controls.get(pieceName)?.parameterInputs.get(parameterName);
+  if (select) {
+    select.value = value;
+  }
+  if (shouldUpdate) {
+    updateSolution();
+  }
 }
 
 function changeBound(name, bound, delta) {
@@ -237,6 +312,9 @@ function setRange(name, minimum, maximum, shouldUpdate = true) {
   controls.maximumDecrease.disabled = normalizedMaximum === 0;
   controls.maximumIncrease.disabled = normalizedMaximum === controls.maximum;
   controls.row.classList.toggle("excluded", normalizedMaximum === 0);
+  for (const select of controls.parameterInputs.values()) {
+    select.disabled = normalizedMaximum === 0;
+  }
   if (shouldUpdate) {
     updateSolution();
   }
@@ -247,7 +325,11 @@ function updateSolution() {
     return;
   }
   try {
-    const result = queryCatalog(state.catalog, state.pieceCounts);
+    const result = queryCatalog(
+      state.catalog,
+      state.pieceCounts,
+      state.pieceParameters,
+    );
     if (result.scenario === null) {
       showError(
         "No selectable solution satisfies these count limits.",

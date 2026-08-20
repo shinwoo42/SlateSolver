@@ -35,7 +35,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -150,7 +151,8 @@ p {
 
 .inventory-row {
   --piece-color: #fff;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   justify-content: space-between;
@@ -160,6 +162,47 @@ p {
   border-bottom: 1px solid var(--line-soft);
   border-radius: 0;
   background: transparent;
+}
+
+.piece-parameters {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1px;
+}
+
+.piece-parameters[hidden] {
+  display: none;
+}
+
+.parameter-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.parameter-label {
+  color: var(--subtle);
+  font-size: 0.7rem;
+}
+
+.parameter-select {
+  min-height: 32px;
+  padding: 0 28px 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--text);
+  background: var(--input);
+  font-size: 0.76rem;
+}
+
+.parameter-select:focus-visible {
+  border-color: var(--line-focus);
+  outline: none;
+}
+
+.parameter-select:disabled {
+  cursor: default;
 }
 
 .inventory-row:focus-within {
